@@ -4,6 +4,8 @@ import com.lowdragmc.lowdraglib.client.bakedpipeline.FaceQuad;
 import com.lowdragmc.lowdraglib.client.model.ModelFactory;
 import com.lowdragmc.lowdraglib.client.renderer.IItemRendererProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectLists;
 import lombok.Setter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -22,7 +24,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,21 +37,27 @@ import java.util.function.Supplier;
  * @implNote PipeModel
  */
 public class PipeModel {
+    private final static List<WeakReference<PipeModel>> allModels = ObjectLists.synchronize(new ObjectArrayList<>());
+
     public final static int ITEM_CONNECTIONS = 0b1100;
     public final float thickness;
     public final AABB coreCube;
     public final Map<Direction, AABB> sideCubes;
 
     public Supplier<ResourceLocation> sideTexture, endTexture;
+    @Nullable
+    public Supplier<@Nullable ResourceLocation> secondarySideTexture, secondaryEndTexture;
     @Setter
     public ResourceLocation sideOverlayTexture, endOverlayTexture;
 
     @Environment(EnvType.CLIENT)
-    TextureAtlasSprite sideSprite, endSprite, sideOverlaySprite, endOverlaySprite;
+    TextureAtlasSprite sideSprite, endSprite, secondarySideSprite, secondaryEndSprite, sideOverlaySprite, endOverlaySprite;
 
-    public PipeModel(float thickness, Supplier<ResourceLocation> sideTexture, Supplier<ResourceLocation> endTexture) {
+    public PipeModel(float thickness, Supplier<ResourceLocation> sideTexture, Supplier<ResourceLocation> endTexture, @Nullable Supplier<@Nullable ResourceLocation> secondarySideTexture, @Nullable Supplier<@Nullable ResourceLocation> secondaryEndTexture) {
         this.sideTexture = sideTexture;
         this.endTexture = endTexture;
+        this.secondarySideTexture = secondarySideTexture;
+        this.secondaryEndTexture = secondaryEndTexture;
         this.thickness = thickness;
         double min = (1d - thickness) / 2;
         double max = min + thickness;
@@ -62,6 +73,8 @@ public class PipeModel {
                     normal.getY() == 0 ? max : normal.getY() > 0 ? 1 : min,
                     normal.getZ() == 0 ? max : normal.getZ() > 0 ? 1 : min));
         }
+
+        allModels.add(new WeakReference<>(this));
     }
 
     public VoxelShape getShapes(int connections) {
@@ -87,6 +100,12 @@ public class PipeModel {
         if (endSprite == null) {
             endSprite = ModelFactory.getBlockSprite(endTexture.get());
         }
+        if (secondarySideTexture != null && secondarySideTexture.get() != null && secondarySideSprite == null) {
+            secondarySideSprite = ModelFactory.getBlockSprite(secondarySideTexture.get());
+        }
+        if (secondaryEndTexture != null && secondaryEndTexture.get() != null && secondaryEndSprite == null) {
+            secondaryEndSprite = ModelFactory.getBlockSprite(secondaryEndTexture.get());
+        }
         if (sideOverlayTexture != null && sideOverlaySprite == null) {
             sideOverlaySprite = ModelFactory.getBlockSprite(sideOverlayTexture);
         }
@@ -96,19 +115,27 @@ public class PipeModel {
 
         if (side != null) {
             if (thickness == 1) { // full block
-                return List.of(FaceQuad.builder(side, sideSprite).cube(coreCube).cubeUV().tintIndex(0).bake());
+                List<BakedQuad> quads = new ArrayList<>();
+                quads.add(FaceQuad.builder(side, sideSprite).cube(coreCube).cubeUV().tintIndex(0).bake());
+                if (secondarySideSprite != null) {
+                    quads.add(FaceQuad.builder(side, secondarySideSprite).cube(coreCube).cubeUV().tintIndex(0).bake());
+                }
+                return quads;
             }
 
             if (isConnected(connections, side)) { // side connected
                 List<BakedQuad> quads = new ArrayList<>();
                 quads.add(FaceQuad.builder(side, endSprite).cube(sideCubes.get(side).inflate(-0.001)).cubeUV().tintIndex(1).bake());
+                if (secondaryEndSprite != null) {
+                    quads.add(FaceQuad.builder(side, secondaryEndSprite).cube(sideCubes.get(side)).cubeUV().tintIndex(1).bake());
+                }
                 if (endOverlaySprite != null) {
-                    quads.add(FaceQuad.builder(side, endOverlaySprite).cube(sideCubes.get(side).inflate(-0.000)).cubeUV().tintIndex(0).bake());
+                    quads.add(FaceQuad.builder(side, endOverlaySprite).cube(sideCubes.get(side)).cubeUV().tintIndex(0).bake());
                 }
                 if (sideOverlaySprite != null) {
                     for (Direction face : Direction.values()) {
                         if (face != side && face != side.getOpposite()) {
-                            quads.add(FaceQuad.builder(face, sideOverlaySprite).cube(sideCubes.get(side).inflate(-0.000)).cubeUV().tintIndex(2).bake());
+                            quads.add(FaceQuad.builder(face, sideOverlaySprite).cube(sideCubes.get(side)).cubeUV().tintIndex(2).bake());
                         }
                     }
                 }
@@ -124,15 +151,18 @@ public class PipeModel {
             for (Direction face : Direction.values()) {
                 if (!isConnected(connections, face)) {
                     quads.add(FaceQuad.builder(face, sideSprite).cube(coreCube).cubeUV().tintIndex(0).bake());
+                    if (secondarySideSprite != null) {
+                        quads.add(FaceQuad.builder(face, secondarySideSprite).cube(coreCube).cubeUV().tintIndex(0).bake());
+                    }
                 }
                 // render each connected side
                 for (Direction facing : Direction.values()) {
                     if (facing.getAxis() != face.getAxis()) {
                         if (isConnected(connections, facing)) {
                             quads.add(FaceQuad.builder(face, sideSprite).cube(sideCubes.get(facing)).cubeUV().tintIndex(0).bake());
-                            //if (endOverlaySprite != null) {
-                            //    quads.add(FaceQuad.builder(face, endOverlaySprite).cube(sideCubes.get(facing).inflate(0.01)).cubeUV().tintIndex(0).bake());
-                            //}
+                            if (secondarySideSprite != null) {
+                                quads.add(FaceQuad.builder(face, secondarySideSprite).cube(sideCubes.get(facing)).cubeUV().tintIndex(0).bake());
+                            }
                             if (sideOverlaySprite != null) {
                                 quads.add(FaceQuad.builder(face, sideOverlaySprite).cube(sideCubes.get(facing).inflate(0.001)).cubeUV().tintIndex(2).bake());
                             }
@@ -153,11 +183,17 @@ public class PipeModel {
         return sideSprite;
     }
 
+    private final Map<Optional<Direction>, List<BakedQuad>> itemModelCache = new ConcurrentHashMap<>();
+
     @Environment(EnvType.CLIENT)
     public void renderItem(ItemStack stack, ItemTransforms.TransformType transformType, boolean leftHand, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, BakedModel model) {
         IItemRendererProvider.disabled.set(true);
         Minecraft.getInstance().getItemRenderer().render(stack, transformType, leftHand, matrixStack, buffer, combinedLight, combinedOverlay,
-                (ItemBakedModel) (state, direction, random) -> bakeQuads(direction, ITEM_CONNECTIONS));
+                (ItemBakedModel) (state, direction, random) -> itemModelCache.computeIfAbsent(
+                        Optional.ofNullable(direction),
+                        direction1 -> bakeQuads(direction1.orElse(null), ITEM_CONNECTIONS)
+                )
+        );
         IItemRendererProvider.disabled.set(false);
     }
 
@@ -170,5 +206,16 @@ public class PipeModel {
         sideSprite = null;
         endSprite = null;
         endOverlaySprite = null;
+    }
+
+    private void invalidateItemModelCache() {
+        itemModelCache.clear();
+    }
+
+    public static void invalidateAllCachedModels() {
+        allModels.stream()
+                .map(Reference::get)
+                .filter(Objects::nonNull)
+                .forEach(PipeModel::invalidateItemModelCache);
     }
 }

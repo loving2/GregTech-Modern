@@ -33,10 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author KilaBash
@@ -141,6 +138,7 @@ public abstract class SteamWorkableMachine extends SteamMachine implements IReci
 
     @Override
     public void clientTick() {
+        super.clientTick();
         if (previouslyMuffled != isMuffled) {
             previouslyMuffled = isMuffled;
 

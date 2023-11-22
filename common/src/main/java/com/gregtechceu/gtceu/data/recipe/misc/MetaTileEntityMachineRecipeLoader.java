@@ -4,6 +4,8 @@ import appeng.core.definitions.AEItems;
 import appeng.core.definitions.AEParts;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.data.chemical.material.stack.UnificationEntry;
+import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
+import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
 import com.gregtechceu.gtceu.integration.ae2.GTAEMachines;
@@ -14,8 +16,7 @@ import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
 import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.LD_FLUID_PIPE;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.LD_ITEM_PIPE;
+import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
 import static com.gregtechceu.gtceu.common.data.GTItems.*;
 import static com.gregtechceu.gtceu.common.data.GTMachines.*;
 import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
@@ -456,6 +457,52 @@ public class MetaTileEntityMachineRecipeLoader {
                 .outputItems(ENERGY_INPUT_HATCH_16A[UV])
                 .duration(200).EUt(VA[UV]).save(provider);
 
+        // 64A Substation Energy Hatches
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_energy_hatch_ev")
+                .inputItems(POWER_TRANSFORMER[IV])
+                .inputItems(ENERGY_INPUT_HATCH_16A[EV])
+                .inputItems(HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_IV, 2)
+                .inputItems(wireGtHex, Tungsten, 2)
+                .outputItems(SUBSTATION_ENERGY_INPUT_HATCH[EV])
+                .duration(400).EUt(VA[EV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_energy_hatch_iv")
+                .inputItems(POWER_TRANSFORMER[LuV])
+                .inputItems(ENERGY_INPUT_HATCH_16A[IV])
+                .inputItems(HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_LuV, 2)
+                .inputItems(wireGtHex, NiobiumTitanium, 2)
+                .outputItems(SUBSTATION_ENERGY_INPUT_HATCH[IV])
+                .duration(400).EUt(VA[IV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_energy_hatch_luv")
+                .inputItems(POWER_TRANSFORMER[ZPM])
+                .inputItems(ENERGY_INPUT_HATCH_16A[LuV])
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_ZPM, 2)
+                .inputItems(wireGtHex, VanadiumGallium, 2)
+                .outputItems(SUBSTATION_ENERGY_INPUT_HATCH[LuV])
+                .duration(400).EUt(VA[LuV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_energy_hatch_zpm")
+                .inputItems(POWER_TRANSFORMER[UV])
+                .inputItems(ENERGY_INPUT_HATCH_16A[ZPM])
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_UV, 2)
+                .inputItems(wireGtHex, YttriumBariumCuprate, 2)
+                .outputItems(SUBSTATION_ENERGY_INPUT_HATCH[ZPM])
+                .duration(400).EUt(VA[ZPM]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_energy_hatch_uv")
+                .inputItems(ENERGY_INPUT_HATCH_16A[UV], 2)
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate)
+                .inputItems(wireGtHex, Europium, 2)
+                .outputItems(SUBSTATION_ENERGY_INPUT_HATCH[UV])
+                .duration(400).EUt(VA[UV]).save(provider);
+
         // 4A Dynamo Hatches
 
         ASSEMBLER_RECIPES.recipeBuilder("dynamo_hatch_4a_ev")
@@ -556,6 +603,52 @@ public class MetaTileEntityMachineRecipeLoader {
                 .inputItems(wireGtOctal, Europium, 2)
                 .outputItems(ENERGY_OUTPUT_HATCH_16A[UV])
                 .duration(200).EUt(VA[UV]).save(provider);
+
+        // 64A Substation Dynamo Hatches
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_dynamo_hatch_ev")
+                .inputItems(POWER_TRANSFORMER[IV])
+                .inputItems(ENERGY_OUTPUT_HATCH_16A[EV])
+                .inputItems(HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_IV, 2)
+                .inputItems(wireGtHex, Tungsten, 2)
+                .outputItems(SUBSTATION_ENERGY_OUTPUT_HATCH[EV])
+                .duration(400).EUt(VA[EV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_dynamo_hatch_iv")
+                .inputItems(POWER_TRANSFORMER[LuV])
+                .inputItems(ENERGY_OUTPUT_HATCH_16A[IV])
+                .inputItems(HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_LuV, 2)
+                .inputItems(wireGtHex, NiobiumTitanium, 2)
+                .outputItems(SUBSTATION_ENERGY_OUTPUT_HATCH[IV])
+                .duration(400).EUt(VA[IV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_dynamo_hatch_luv")
+                .inputItems(POWER_TRANSFORMER[ZPM])
+                .inputItems(ENERGY_OUTPUT_HATCH_16A[LuV])
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_ZPM, 2)
+                .inputItems(wireGtHex, VanadiumGallium, 2)
+                .outputItems(SUBSTATION_ENERGY_OUTPUT_HATCH[LuV])
+                .duration(400).EUt(VA[LuV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_dynamo_hatch_zpm")
+                .inputItems(POWER_TRANSFORMER[UV])
+                .inputItems(ENERGY_OUTPUT_HATCH_16A[ZPM])
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(VOLTAGE_COIL_UV, 2)
+                .inputItems(wireGtHex, YttriumBariumCuprate, 2)
+                .outputItems(SUBSTATION_ENERGY_OUTPUT_HATCH[ZPM])
+                .duration(400).EUt(VA[ZPM]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("substation_dynamo_hatch_uv")
+                .inputItems(ENERGY_OUTPUT_HATCH_16A[UV], 2)
+                .inputItems(ULTRA_HIGH_POWER_INTEGRATED_CIRCUIT, 4)
+                .inputItems(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate)
+                .inputItems(wireGtHex, Europium, 2)
+                .outputItems(SUBSTATION_ENERGY_OUTPUT_HATCH[UV])
+                .duration(400).EUt(VA[UV]).save(provider);
 
         // Maintenance Hatch
 
